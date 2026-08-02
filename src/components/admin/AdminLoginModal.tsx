@@ -35,10 +35,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
   const handleQuickDemoLogin = async () => {
     setError(null);
     setLoading(true);
-    const res = await login("sam444official@gmail.com", "admin123");
+    const targetEmail = data.profile?.email || "sam444official@gmail.com";
+    const res = await login(targetEmail, "admin123");
     setLoading(false);
     if (res.success) {
       onSuccess();
+    } else {
+      setError(res.error || "Quick login failed.");
     }
   };
 
