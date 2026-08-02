@@ -17,6 +17,12 @@ interface CMSContextType {
   isAuthenticated: boolean;
   user: UserInfo | null;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  changePassword: (
+    email: string,
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
   logout: () => void;
   updateData: (updater: (prev: CmsData) => CmsData, changeSummary?: string) => void;
   saveNow: (explicitData?: CmsData) => Promise<boolean>;
@@ -222,6 +228,33 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: false, error: "Invalid email or password. Default password: admin123" };
   };
 
+  // Change Password
+  const changePassword = async (
+    email: string,
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => {
+    try {
+      const res = await fetch("/api/cms/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, currentPassword, newPassword, confirmPassword }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || "Password updated successfully!" };
+      } else {
+        return { success: false, error: json.error || "Failed to update password." };
+      }
+    } catch (e: any) {
+      console.warn("Change password request error:", e);
+      return { success: false, error: "Network error. Unable to connect to authentication server." };
+    }
+  };
+
   // Logout
   const logout = () => {
     localStorage.removeItem("cms_token");
@@ -353,6 +386,7 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAuthenticated,
         user,
         login,
+        changePassword,
         logout,
         updateData,
         saveNow,

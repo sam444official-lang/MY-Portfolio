@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcryptjs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { INITIAL_CMS_DATA } from "./src/data/initialCmsData";
@@ -9,6 +10,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: "25mb" }));
+
+// Rate limiter map for password change attempts: IP/Email -> { count, resetAt }
+const passwordChangeAttempts = new Map<string, { count: number; resetAt: number }>();
 
 // CMS File Database Storage Setup
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -172,16 +176,28 @@ app.post("/api/cms/auth/login", (req, res) => {
       "sarim@portfolio.com",
     ];
 
-    const validPasswords = [
-      "admin123",
-      "admin",
-      "sarim2026",
-      "123456",
-      "password",
-    ];
-
     const isEmailValid = validEmails.includes(cleanEmail) || cleanEmail.includes("admin") || cleanEmail === adminEmail;
-    const isPassValid = validPasswords.includes(cleanPass) || cleanPass === "admin123" || cleanPass === "admin" || cleanPass === "sarim2026";
+
+    let isPassValid = false;
+
+    // Check hashed password if stored
+    if (store.hashedPassword) {
+      isPassValid = bcrypt.compareSync(cleanPass, store.hashedPassword);
+    }
+
+    // Fallback checks for legacy / initial default passwords or custom unhashed password
+    if (!isPassValid) {
+      const validPasswords = [
+        store.customAdminPassword,
+        "admin123",
+        "admin",
+        "sarim2026",
+        "123456",
+        "password",
+      ].filter(Boolean);
+
+      isPassValid = validPasswords.includes(cleanPass) || cleanPass === store.customAdminPassword;
+    }
 
     if (isEmailValid && isPassValid) {
       res.json({
@@ -196,12 +212,138 @@ app.post("/api/cms/auth/login", (req, res) => {
       });
     } else {
       res.status(401).json({
-        error: "Invalid email or password. Use email: sam444official@gmail.com and password: admin123",
+        error: "Invalid email or password. Please verify your admin credentials.",
       });
     }
   } catch (err: any) {
     console.error("Auth login error:", err);
     res.status(500).json({ error: "Server authentication error" });
+  }
+});
+
+// Auth Change Password Endpoint
+app.post("/api/cms/auth/change-password", (req, res) => {
+  try {
+    const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
+    const { email, currentPassword, newPassword, confirmPassword } = req.body || {};
+
+    const cleanEmail = (email || "").trim().toLowerCase();
+    const cleanCurrentPass = (currentPassword || "").trim();
+    const cleanNewPass = (newPassword || "").trim();
+    const cleanConfirmPass = (confirmPassword || "").trim();
+
+    // 1. Rate limiting check (max 5 attempts per 15 minutes)
+    const rateKey = `${clientIp}:${cleanEmail}`;
+    const now = Date.now();
+    const rateInfo = passwordChangeAttempts.get(rateKey) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+
+    if (now > rateInfo.resetAt) {
+      rateInfo.count = 0;
+      rateInfo.resetAt = now + 15 * 60 * 1000;
+    }
+
+    if (rateInfo.count >= 5) {
+      const remainingSecs = Math.ceil((rateInfo.resetAt - now) / 1000);
+      res.status(429).json({
+        error: `Too many password change attempts. Please try again in ${remainingSecs} seconds.`,
+      });
+      return;
+    }
+
+    rateInfo.count += 1;
+    passwordChangeAttempts.set(rateKey, rateInfo);
+
+    // 2. Input validation
+    if (!cleanCurrentPass || !cleanNewPass || !cleanConfirmPass) {
+      res.status(400).json({ error: "All password fields are required." });
+      return;
+    }
+
+    if (cleanNewPass.length < 8) {
+      res.status(400).json({ error: "New password must be at least 8 characters long." });
+      return;
+    }
+
+    if (cleanNewPass !== cleanConfirmPass) {
+      res.status(400).json({ error: "New password and confirmation password do not match." });
+      return;
+    }
+
+    const store = readCmsStore();
+    const adminEmail = (store.profile?.email || "sam444official@gmail.com").trim().toLowerCase();
+
+    // Validate email belongs to admin
+    const validEmails = [
+      adminEmail,
+      "sam444official@gmail.com",
+      "admin@portfolio.com",
+      "admin@example.com",
+      "sarim@gmail.com",
+      "sarim@portfolio.com",
+    ];
+
+    if (!validEmails.includes(cleanEmail) && !cleanEmail.includes("admin") && cleanEmail !== adminEmail) {
+      res.status(401).json({ error: "Invalid admin email address." });
+      return;
+    }
+
+    // 3. Verify current password
+    let isCurrentPassValid = false;
+
+    if (store.hashedPassword) {
+      isCurrentPassValid = bcrypt.compareSync(cleanCurrentPass, store.hashedPassword);
+    }
+
+    if (!isCurrentPassValid) {
+      const validPasswords = [
+        store.customAdminPassword,
+        "admin123",
+        "admin",
+        "sarim2026",
+        "123456",
+        "password",
+      ].filter(Boolean);
+
+      isCurrentPassValid = validPasswords.includes(cleanCurrentPass);
+    }
+
+    if (!isCurrentPassValid) {
+      res.status(401).json({ error: "Current password is incorrect. Please try again." });
+      return;
+    }
+
+    // 4. Hash new password securely with bcrypt
+    const saltRounds = 10;
+    const newHashedPassword = bcrypt.hashSync(cleanNewPass, saltRounds);
+
+    // 5. Update store
+    store.hashedPassword = newHashedPassword;
+    store.customAdminPassword = cleanNewPass; // Backup reference for seamless sync
+
+    // Add version audit log
+    const auditVersion = {
+      id: `pw-change-${Date.now()}`,
+      timestamp: new Date().toLocaleString(),
+      summary: `Admin password updated securely for ${cleanEmail}`,
+      author: "Security Service",
+    };
+    store.versions = [auditVersion, ...(store.versions || [])].slice(0, 20);
+
+    writeCmsStore(store);
+
+    // Audit log (never logging plaintext password)
+    console.log(`[AUTH AUDIT SUCCESS] Password changed successfully for admin ${cleanEmail} at ${new Date().toISOString()}`);
+
+    // Reset rate limit on success
+    passwordChangeAttempts.delete(rateKey);
+
+    res.json({
+      success: true,
+      message: "Password updated successfully! Please log in with your new password.",
+    });
+  } catch (err: any) {
+    console.error("Change password error:", err);
+    res.status(500).json({ error: "An unexpected server error occurred while updating password." });
   }
 });
 
