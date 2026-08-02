@@ -328,4 +328,17 @@ Do not output markdown code fences or conversational conversational text—retur
   ],
   mode: "published",
   lastSavedAt: new Date().toISOString(),
+  aiSettings: {
+    geminiApiKey: "••••••••••••••••••••••••••••",
+    openAiApiKey: "",
+    defaultModel: "gemini-3.6-flash",
+    systemPrompt: "You are an intelligent AI assistant representing Sarim Usmani's portfolio. Provide helpful, accurate responses about Sarim's skills, experience, and capstone projects.",
+    temperature: 0.7,
+    maxTokens: 2048,
+    enableStreaming: true,
+    enableAiChat: true,
+    enableCodeReview: true,
+    enableResumeBuilder: true,
+    enablePromptLibrary: true,
+  },
 };

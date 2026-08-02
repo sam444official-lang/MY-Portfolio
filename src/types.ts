@@ -216,6 +216,20 @@ export interface VersionHistoryEntry {
   author: string;
 }
 
+export interface AiSettings {
+  geminiApiKey?: string;
+  openAiApiKey?: string;
+  defaultModel?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  enableStreaming?: boolean;
+  enableAiChat?: boolean;
+  enableCodeReview?: boolean;
+  enableResumeBuilder?: boolean;
+  enablePromptLibrary?: boolean;
+}
+
 export interface CmsData {
   profile: ProfileInfo;
   statistics: StatisticCard[];
@@ -241,6 +255,7 @@ export interface CmsData {
   versions: VersionHistoryEntry[];
   mode: "published" | "draft";
   lastSavedAt?: string;
+  aiSettings?: AiSettings;
 }
 
 export interface SoftSkill {
