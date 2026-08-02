@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
   ArrowDown,
-  ArrowUpRight,
-  Code2,
   Copy,
   Check,
   Github,
@@ -14,8 +12,9 @@ import {
   Globe,
   MapPin,
   Calendar,
+  Code2,
 } from "lucide-react";
-import { PERSONAL_INFO } from "../data/portfolioData";
+import { useCMS } from "../context/CMSContext";
 
 interface HeroProps {
   onOpenResume: () => void;
@@ -23,20 +22,20 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenResume, onOpenSchedule }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+
   const [copiedCode, setCopiedCode] = useState(false);
   const [terminalTab, setTerminalTab] = useState<"code" | "status" | "stack">("code");
 
-  const developerCodeSnippet = `// Sarim Usmani - Portfolio Overview
+  const developerCodeSnippet = `// ${profile.name} - Portfolio Overview
 const developer = {
-  name: "${PERSONAL_INFO.name}",
-  role: "Full-Stack Web Developer",
-  education: "B.Sc. Computer Science (2022-2026)",
-  location: "Mumbai, India",
-  coreStack: ["Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "Express", "Firebase"],
-  aiCapabilities: ["Gemini API", "Vision AI", "Structured JSON Schemas"],
-  status: "Available for Internships & Full-time Roles",
-  passion: "Crafting modern SaaS products with pixel-perfect UI/UX",
-  contact: "${PERSONAL_INFO.email}"
+  name: "${profile.name}",
+  role: "${profile.title}",
+  college: "${profile.college}",
+  location: "${profile.location}",
+  status: "${profile.statusBadge || profile.status}",
+  contact: "${profile.email}"
 };`;
 
   const copyCodeToClipboard = () => {
@@ -56,7 +55,6 @@ const developer = {
     <section id="home" className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
       {/* Background Ambient Glows & Grid */}
       <div className="absolute inset-0 -z-10 bg-[#09090B]">
-        {/* Subtle SVG Grid Background */}
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -65,12 +63,10 @@ const developer = {
           }}
         />
 
-        {/* Ambient Gradient Glows */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-emerald-500/15 via-blue-500/15 to-violet-500/15 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-1/3 left-10 w-72 h-72 bg-emerald-500/10 blur-[90px] rounded-full pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-80 h-80 bg-violet-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-        {/* Floating Geometric Elements */}
         <div className="absolute top-28 right-[12%] w-16 h-16 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md rotate-12 hidden lg:block animate-pulse duration-1000" />
         <div className="absolute bottom-20 left-[8%] w-12 h-12 rounded-xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md -rotate-6 hidden lg:block" />
       </div>
@@ -83,10 +79,10 @@ const developer = {
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-lg">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-xs font-semibold text-zinc-300">
-                Full-Stack & Generative AI Developer
+                {profile.tagline || "Full-Stack & Generative AI Developer"}
               </span>
               <span className="h-1 w-1 rounded-full bg-zinc-600" />
-              <span className="text-xs text-emerald-400 font-medium">Mumbai, India</span>
+              <span className="text-xs text-emerald-400 font-medium">{profile.location}</span>
             </div>
 
             {/* Main Headline */}
@@ -96,22 +92,18 @@ const developer = {
                 <span className="inline-block w-8 h-[2px] bg-emerald-400/60" />
               </div>
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.08]">
-                Sarim Usmani
+                {profile.name}
               </h1>
               <p className="text-lg sm:text-2xl font-semibold text-zinc-400 tracking-tight leading-snug">
-                Final-Year Computer Science Student
+                {profile.title}
                 <span className="text-emerald-400 font-bold"> • </span>
-                Full-Stack Web Developer
+                {profile.subtitle}
               </p>
             </div>
 
             {/* Paragraph Introduction */}
             <p className="text-base sm:text-lg text-zinc-400 max-w-2xl leading-relaxed font-normal">
-              I build high-performance, modern web applications leveraging{" "}
-              <strong className="text-zinc-200 font-semibold">React 19</strong>,{" "}
-              <strong className="text-zinc-200 font-semibold">Next.js 15</strong>,{" "}
-              <strong className="text-zinc-200 font-semibold">TypeScript</strong>, and{" "}
-              <strong className="text-zinc-200 font-semibold">AI integrations</strong>. Driven by a passion for clean code, responsive glassmorphic UI, and scalable software architecture.
+              {profile.bioShort || "I build high-performance, modern web applications leveraging React 19, Next.js 15, TypeScript, and AI integrations."}
             </p>
 
             {/* Action Buttons */}
@@ -144,38 +136,44 @@ const developer = {
             {/* Social Icons & Quick Info */}
             <div className="pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <a
-                  href={PERSONAL_INFO.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:scale-110 transition-all shadow-md"
-                  aria-label="GitHub Profile"
-                >
-                  <Github className="w-4 h-4" />
-                </a>
+                {profile.github && (
+                  <a
+                    href={profile.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:scale-110 transition-all shadow-md"
+                    aria-label="GitHub Profile"
+                  >
+                    <Github className="w-4 h-4" />
+                  </a>
+                )}
 
-                <a
-                  href={PERSONAL_INFO.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-blue-400 hover:bg-white/10 hover:scale-110 transition-all shadow-md"
-                  aria-label="LinkedIn Profile"
-                >
-                  <Linkedin className="w-4 h-4" />
-                </a>
+                {profile.linkedin && (
+                  <a
+                    href={profile.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-blue-400 hover:bg-white/10 hover:scale-110 transition-all shadow-md"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                  </a>
+                )}
 
-                <a
-                  href={`mailto:${PERSONAL_INFO.email}`}
-                  className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-emerald-400 hover:bg-white/10 hover:scale-110 transition-all shadow-md"
-                  aria-label="Email Me"
-                >
-                  <Mail className="w-4 h-4" />
-                </a>
+                {profile.email && (
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-emerald-400 hover:bg-white/10 hover:scale-110 transition-all shadow-md"
+                    aria-label="Email Me"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </a>
+                )}
               </div>
 
               <div className="flex items-center gap-2 text-xs text-zinc-400">
                 <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Lords Universal College, Mumbai (2022–2026)</span>
+                <span>{profile.college} • {profile.location}</span>
               </div>
             </div>
           </div>
@@ -191,7 +189,7 @@ const developer = {
                   <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
                   <span className="ml-2 text-xs font-mono text-zinc-400 flex items-center gap-1.5">
                     <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                    sarim-usmani.ts
+                    developer-profile.ts
                   </span>
                 </div>
 
@@ -239,14 +237,12 @@ const developer = {
                       <code>
                         <span className="text-violet-400">const</span>{" "}
                         <span className="text-blue-400">developer</span> = &#123;{"\n"}
-                        {"  "}<span className="text-emerald-400">name</span>: <span className="text-amber-300">"{PERSONAL_INFO.name}"</span>,{"\n"}
-                        {"  "}<span className="text-emerald-400">role</span>: <span className="text-amber-300">"Full-Stack Web Developer"</span>,{"\n"}
-                        {"  "}<span className="text-emerald-400">college</span>: <span className="text-amber-300">"Lords Universal College"</span>,{"\n"}
-                        {"  "}<span className="text-emerald-400">year</span>: <span className="text-amber-300">"Final-Year CS (2022-2026)"</span>,{"\n"}
-                        {"  "}<span className="text-emerald-400">stack</span>: [
-                        <span className="text-amber-300">"Next.js"</span>, <span className="text-amber-300">"React 19"</span>, <span className="text-amber-300">"TypeScript"</span>, <span className="text-amber-300">"Express"</span>, <span className="text-amber-300">"Firebase"</span>],{"\n"}
-                        {"  "}<span className="text-emerald-400">aiIntegration</span>: <span className="text-amber-300">"Gemini API & Bill Vision AI"</span>,{"\n"}
-                        {"  "}<span className="text-emerald-400">status</span>: <span className="text-amber-300">"{PERSONAL_INFO.status}"</span>{"\n"}
+                        {"  "}<span className="text-emerald-400">name</span>: <span className="text-amber-300">"{profile.name}"</span>,{"\n"}
+                        {"  "}<span className="text-emerald-400">role</span>: <span className="text-amber-300">"{profile.title}"</span>,{"\n"}
+                        {"  "}<span className="text-emerald-400">college</span>: <span className="text-amber-300">"{profile.college}"</span>,{"\n"}
+                        {"  "}<span className="text-emerald-400">location</span>: <span className="text-amber-300">"{profile.location}"</span>,{"\n"}
+                        {"  "}<span className="text-emerald-400">status</span>: <span className="text-amber-300">"{profile.statusBadge || profile.status}"</span>,{"\n"}
+                        {"  "}<span className="text-emerald-400">contact</span>: <span className="text-amber-300">"{profile.email}"</span>{"\n"}
                         &#125;;
                       </code>
                     </pre>
@@ -256,44 +252,34 @@ const developer = {
                 {terminalTab === "status" && (
                   <div className="space-y-3 font-mono text-xs">
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-zinc-400">Academic Progress:</span>
-                      <span className="text-emerald-400 font-bold">8th Semester (Final Year)</span>
+                      <span className="text-zinc-400">Status Badge:</span>
+                      <span className="text-emerald-400 font-bold">{profile.statusBadge || "Active"}</span>
                     </div>
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-zinc-400">Primary Goal:</span>
-                      <span className="text-blue-400 font-bold">Software Engineer Internship</span>
+                      <span className="text-zinc-400">Availability:</span>
+                      <span className="text-blue-400 font-bold">{profile.availability || "Immediate"}</span>
                     </div>
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-zinc-400">Flagship Project:</span>
-                      <span className="text-violet-400 font-bold">EcoTrack India (AI Platform)</span>
+                      <span className="text-zinc-400">Institution:</span>
+                      <span className="text-violet-400 font-bold">{profile.college}</span>
                     </div>
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-zinc-400">Current Focus:</span>
-                      <span className="text-amber-300">Next.js 15 App Router & Generative AI</span>
+                      <span className="text-zinc-400">Graduation:</span>
+                      <span className="text-amber-300">{profile.graduationYear}</span>
                     </div>
                   </div>
                 )}
 
                 {terminalTab === "stack" && (
                   <div className="space-y-3">
-                    <div className="text-zinc-400 text-xs font-medium">Core Stack Highlights:</div>
+                    <div className="text-zinc-400 text-xs font-medium">Active Skills:</div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
-                        <Code2 className="w-3.5 h-3.5" />
-                        <span>Next.js & React 19</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5" />
-                        <span>TypeScript</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs flex items-center gap-2">
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>Gemini AI SDK</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2">
-                        <Terminal className="w-3.5 h-3.5" />
-                        <span>Node.js & Express</span>
-                      </div>
+                      {data.skills.slice(0, 6).map((s, idx) => (
+                        <div key={s.id || idx} className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
+                          <Code2 className="w-3.5 h-3.5" />
+                          <span>{s.name} ({s.progress}%)</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -303,9 +289,9 @@ const developer = {
               <div className="px-5 py-2.5 bg-black/40 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Ready for internship assignments</span>
+                  <span>{profile.statusBadge || "Ready for opportunities"}</span>
                 </div>
-                <span>UTF-8 • TSX</span>
+                <span>UTF-8 • Live CMS</span>
               </div>
             </div>
           </div>

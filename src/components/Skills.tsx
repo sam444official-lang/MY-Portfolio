@@ -23,10 +23,12 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { SKILLS_DATA } from "../data/portfolioData";
-import { SkillItem } from "../types";
+import { useCMS } from "../context/CMSContext";
 
 export const Skills: React.FC = () => {
+  const { data } = useCMS();
+  const skillsList = data.skills || [];
+
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -84,12 +86,12 @@ export const Skills: React.FC = () => {
     }
   };
 
-  const filteredSkills = SKILLS_DATA.filter((skill) => {
+  const filteredSkills = skillsList.filter((skill) => {
     const matchesCategory =
       selectedCategory === "All" || skill.category === selectedCategory;
     const matchesSearch =
       skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.relevantTech.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      (skill.relevantTech || []).some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
@@ -146,9 +148,9 @@ export const Skills: React.FC = () => {
 
         {/* Skills Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSkills.map((skill) => (
+          {filteredSkills.map((skill, index) => (
             <div
-              key={skill.name}
+              key={skill.id || skill.name || index}
               className="group p-6 rounded-3xl bg-[#18181B] hover:bg-white/[0.06] border border-white/10 backdrop-blur-xl shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20 flex flex-col justify-between space-y-4"
             >
               <div className="space-y-3">
@@ -205,7 +207,7 @@ export const Skills: React.FC = () => {
 
               {/* Technologies / Key Tags */}
               <div className="pt-3 border-t border-white/10 flex flex-wrap gap-1.5">
-                {skill.relevantTech.map((tech) => (
+                {(skill.relevantTech || []).map((tech) => (
                   <span
                     key={tech}
                     className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-zinc-300 text-[11px] font-mono group-hover:border-white/10 transition-colors"

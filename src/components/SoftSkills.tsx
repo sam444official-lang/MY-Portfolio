@@ -9,9 +9,12 @@ import {
   Sparkles,
   CheckCircle,
 } from "lucide-react";
-import { SOFT_SKILLS_DATA } from "../data/portfolioData";
+import { useCMS } from "../context/CMSContext";
 
 export const SoftSkills: React.FC = () => {
+  const { data } = useCMS();
+  const softSkills = data.softSkills || [];
+
   const getSoftSkillIcon = (iconName: string) => {
     switch (iconName) {
       case "Puzzle":
@@ -53,7 +56,7 @@ export const SoftSkills: React.FC = () => {
 
         {/* Soft Skills Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SOFT_SKILLS_DATA.map((skill) => (
+          {softSkills.map((skill) => (
             <div
               key={skill.id}
               className="group p-6 rounded-3xl bg-[#18181B] hover:bg-white/[0.06] border border-white/10 backdrop-blur-xl shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20 flex flex-col justify-between space-y-4"

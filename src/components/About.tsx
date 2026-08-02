@@ -1,12 +1,16 @@
 import React from "react";
 import { Code2, Cpu, GraduationCap, GitBranch, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
-import { PERSONAL_INFO, STATISTICS_DATA } from "../data/portfolioData";
+import { useCMS } from "../context/CMSContext";
 
 interface AboutProps {
   onOpenSchedule: () => void;
 }
 
 export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+  const statistics = data.statistics || [];
+
   const getIcon = (name: string) => {
     switch (name) {
       case "Code2":
@@ -24,20 +28,20 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
 
   const highlights = [
     {
-      title: "Academic Excellence",
-      description: "Final-year Computer Science undergraduate at Lords Universal College, Mumbai (2022–2026), building a deep foundation in Data Structures, Algorithms, DBMS, and Software Engineering.",
+      title: "Academic Background",
+      description: `${profile.title} at ${profile.college} (${profile.graduationYear}). Focus on Data Structures, Algorithms, DBMS, and Web Architecture.`,
     },
     {
-      title: "Full-Stack & React 19 Mastery",
-      description: "A passionate practitioner of modern React and Next.js 15, crafting responsive full-stack applications backed by Express, Node.js, and Firebase.",
+      title: "Full-Stack Development",
+      description: "Practitioner of modern React, Next.js, and TypeScript, building full-stack platforms backed by Express, Node.js, and Firebase.",
     },
     {
-      title: "AI Product Thinking",
-      description: "Integrating LLMs (Google Gemini API) into real-world SaaS applications—from utility bill OCR scanning to automated code auditing and carbon calculations.",
+      title: "Generative AI Integration",
+      description: "Integrating LLMs and Gemini APIs into production tools—from OCR scanning to intelligent search and automated workflows.",
     },
     {
-      title: "Engineering & Problem-Solving Mindset",
-      description: "Dedicated to writing type-safe TypeScript, maintaining clear project architectures, optimizing bundle sizes, and delivering intuitive, glassmorphic UI/UX.",
+      title: "Engineering Mindset",
+      description: "Dedicated to type-safe TypeScript, robust software architecture, clean code quality, and responsive UI/UX.",
     },
   ];
 
@@ -57,7 +61,7 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
             Engineering modern web experiences with passion & purpose.
           </h2>
           <p className="text-zinc-400 text-base sm:text-lg leading-relaxed">
-            I bridges technical rigor with creative product design. Here is a look at my academic narrative, mindset, and technical foundation.
+            Bridging technical rigor with creative product design. Here is a look at my background and technical foundation.
           </p>
         </div>
 
@@ -69,11 +73,11 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl pointer-events-none" />
               
               <h3 className="text-2xl font-bold text-white tracking-tight">
-                Hi, I'm Sarim Usmani 👋
+                Hi, I'm {profile.name} 👋
               </h3>
 
-              <p className="text-zinc-300 text-base leading-relaxed">
-                {PERSONAL_INFO.bioFull}
+              <p className="text-zinc-300 text-base leading-relaxed whitespace-pre-line">
+                {profile.bioFull || profile.bioShort}
               </p>
 
               <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
@@ -82,8 +86,8 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
                     SU
                   </div>
                   <div>
-                    <p className="text-white text-sm font-semibold">Sarim Usmani</p>
-                    <p className="text-zinc-400 text-xs">Lords Universal College, Mumbai</p>
+                    <p className="text-white text-sm font-semibold">{profile.name}</p>
+                    <p className="text-zinc-400 text-xs">{profile.college} • {profile.location}</p>
                   </div>
                 </div>
 
@@ -91,7 +95,7 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
                   onClick={onOpenSchedule}
                   className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white font-medium hover:border-emerald-500/30 transition-all cursor-pointer"
                 >
-                  <span>Connect With Sarim</span>
+                  <span>Connect With {profile.name.split(" ")[0]}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -120,11 +124,11 @@ export const About: React.FC<AboutProps> = ({ onOpenSchedule }) => {
           <div className="lg:col-span-5 space-y-4">
             <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
               <span>Key Profile Highlights</span>
-              <span className="text-xs text-emerald-400 font-mono font-normal">(2022–2026)</span>
+              <span className="text-xs text-emerald-400 font-mono font-normal">({profile.graduationYear})</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-              {STATISTICS_DATA.map((card) => (
+              {statistics.map((card) => (
                 <div
                   key={card.id}
                   className="group relative p-6 rounded-3xl bg-[#18181B] hover:bg-white/[0.06] border border-white/10 backdrop-blur-xl shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20 overflow-hidden"

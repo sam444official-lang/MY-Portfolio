@@ -11,16 +11,20 @@ import {
   Sparkles,
   AlertCircle,
   RefreshCw,
-  MessageSquare,
+  Phone,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { PERSONAL_INFO } from "../data/portfolioData";
+import { useCMS } from "../context/CMSContext";
 
 interface ContactProps {
   onOpenSchedule: () => void;
 }
 
 export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+  const contact = data.contact;
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -70,7 +74,7 @@ export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
       } else {
         setErrorMessage(resData.error || "Failed to send message. Please try again.");
       }
-    } catch (err) {
+    } catch {
       // Fallback local success behavior
       setSubmitted(true);
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
@@ -96,7 +100,7 @@ export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
             Let's build something remarkable.
           </h2>
           <p className="text-zinc-400 text-base sm:text-lg">
-            I am actively seeking Software Engineering internships, full-time web development roles, and technical collaborations.
+            Actively seeking Software Engineering internships, full-time web development roles, and technical collaborations.
           </p>
         </div>
 
@@ -109,61 +113,87 @@ export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
                 Direct Contact
               </h3>
               <p className="text-zinc-400 text-xs leading-relaxed">
-                Feel free to email me directly or connect via social networks. I am always open to discussing new opportunities, project ideas, or technical questions.
+                Feel free to email me directly or connect via social networks. Open to discussing opportunities, projects, or technical questions.
               </p>
 
               {/* Contact List */}
               <div className="space-y-4 pt-2">
                 {/* Email */}
-                <a
-                  href={`mailto:${PERSONAL_INFO.email}`}
-                  className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-                >
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-zinc-400">Direct Email</div>
-                    <div className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
-                      {PERSONAL_INFO.email}
+                {profile.email && (
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                  >
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Mail className="w-5 h-5" />
                     </div>
-                  </div>
-                </a>
+                    <div>
+                      <div className="text-[11px] font-mono text-zinc-400">Direct Email</div>
+                      <div className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        {profile.email}
+                      </div>
+                    </div>
+                  </a>
+                )}
+
+                {/* Phone */}
+                {(profile.phone || contact?.phone) && (
+                  <a
+                    href={`tel:${profile.phone || contact?.phone}`}
+                    className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                  >
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 group-hover:scale-110 transition-transform">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-mono text-zinc-400">Phone</div>
+                      <div className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
+                        {profile.phone || contact?.phone}
+                      </div>
+                    </div>
+                  </a>
+                )}
 
                 {/* Location */}
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-zinc-400">Location</div>
-                    <div className="text-sm font-bold text-white">
-                      {PERSONAL_INFO.location}
+                {profile.location && (
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-mono text-zinc-400">Location</div>
+                      <div className="text-sm font-bold text-white">
+                        {profile.location}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Social Links */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <a
-                    href={PERSONAL_INFO.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-white transition-all"
-                  >
-                    <Github className="w-4 h-4 text-emerald-400" />
-                    <span>GitHub</span>
-                  </a>
+                  {profile.github && (
+                    <a
+                      href={profile.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-white transition-all"
+                    >
+                      <Github className="w-4 h-4 text-emerald-400" />
+                      <span>GitHub</span>
+                    </a>
+                  )}
 
-                  <a
-                    href={PERSONAL_INFO.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-blue-400 transition-all"
-                  >
-                    <Linkedin className="w-4 h-4 text-blue-400" />
-                    <span>LinkedIn</span>
-                  </a>
+                  {profile.linkedin && (
+                    <a
+                      href={profile.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-blue-400 transition-all"
+                    >
+                      <Linkedin className="w-4 h-4 text-blue-400" />
+                      <span>LinkedIn</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -175,14 +205,14 @@ export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span>Active Internship & Job Status</span>
+                <span>Active Status</span>
               </div>
               <p className="text-white text-sm font-semibold">
-                Available for Summer & Fall Internships
+                {profile.availability || contact?.availability || "Available for Internships & Opportunities"}
               </p>
               <div className="flex items-center gap-2 text-xs text-zinc-400 pt-1">
                 <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Typical response time: &lt; 12 hours</span>
+                <span>Response time: &lt; 12 hours</span>
               </div>
             </div>
           </div>
@@ -215,7 +245,7 @@ export const Contact: React.FC<ContactProps> = ({ onOpenSchedule }) => {
                   <div className="space-y-1">
                     <h4 className="text-lg font-bold text-white">Message Sent Successfully!</h4>
                     <p className="text-xs text-zinc-300">
-                      Thank you for reaching out, {formData.name}. Sarim has received your message and will reply via email ({formData.email}) shortly.
+                      Thank you for reaching out, {formData.name}. Your message has been received and you will get a reply at ({formData.email}) shortly.
                     </p>
                   </div>
 

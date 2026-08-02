@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUpRight, FileText, Menu, X, Sparkles } from "lucide-react";
-import { PERSONAL_INFO } from "../data/portfolioData";
+import { ArrowUpRight, FileText, Menu, X, Lock } from "lucide-react";
+import { useCMS } from "../context/CMSContext";
 
 interface HeaderProps {
   onOpenResume: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenResume, onOpenAdmin }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
@@ -19,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
         setIsScrolled(false);
       }
 
-      // Update active section based on scroll position
       const sections = ["home", "about", "skills", "projects", "education", "contact"];
       const scrollPosition = window.scrollY + 120;
 
@@ -80,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
             </div>
           </div>
           <span className="font-extrabold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
-            {PERSONAL_INFO.headerLogo}
+            {profile.headerLogo || "Sarim Usmani"}
           </span>
         </a>
 
@@ -113,8 +116,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>{PERSONAL_INFO.status}</span>
+            <span>{profile.statusBadge || "Actively Job Hunting"}</span>
           </div>
+
+          {/* Admin Login Trigger Button */}
+          {onOpenAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all cursor-pointer"
+              title="Admin CMS Console"
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Resume Button */}
           <button
@@ -156,9 +170,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>{PERSONAL_INFO.status}</span>
+              <span>{profile.statusBadge || "Job Hunting"}</span>
             </div>
-            <span className="text-xs text-zinc-400">Mumbai, India</span>
+            <span className="text-xs text-zinc-400">{profile.location}</span>
           </div>
 
           <nav className="flex flex-col gap-2">
@@ -179,6 +193,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenResume }) => {
           </nav>
 
           <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+            {onOpenAdmin && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenAdmin();
+                }}
+                className="w-full py-2.5 rounded-2xl bg-slate-800 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 border border-slate-700"
+              >
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Admin CMS Console</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

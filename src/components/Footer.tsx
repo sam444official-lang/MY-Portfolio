@@ -1,8 +1,15 @@
 import React from "react";
-import { ArrowUp, Github, Linkedin, Mail, Heart, Sparkles } from "lucide-react";
-import { PERSONAL_INFO } from "../data/portfolioData";
+import { ArrowUp, Github, Linkedin, Mail, Heart, Lock } from "lucide-react";
+import { useCMS } from "../context/CMSContext";
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -36,7 +43,7 @@ export const Footer: React.FC = () => {
               </div>
             </div>
             <span className="font-extrabold text-white group-hover:text-emerald-400 transition-colors">
-              {PERSONAL_INFO.headerLogo}
+              {profile.headerLogo || "Sarim Usmani"}
             </span>
           </a>
 
@@ -56,7 +63,7 @@ export const Footer: React.FC = () => {
           {/* Social icons */}
           <div className="flex items-center gap-3">
             <a
-              href={PERSONAL_INFO.github}
+              href={profile.github}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
@@ -65,7 +72,7 @@ export const Footer: React.FC = () => {
               <Github className="w-4 h-4" />
             </a>
             <a
-              href={PERSONAL_INFO.linkedin}
+              href={profile.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-blue-400 hover:bg-white/10 transition-all"
@@ -74,21 +81,31 @@ export const Footer: React.FC = () => {
               <Linkedin className="w-4 h-4" />
             </a>
             <a
-              href={`mailto:${PERSONAL_INFO.email}`}
+              href={`mailto:${profile.email}`}
               className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-emerald-400 hover:bg-white/10 transition-all"
               aria-label="Email"
             >
               <Mail className="w-4 h-4" />
             </a>
+
+            {onOpenAdmin && (
+              <button
+                onClick={onOpenAdmin}
+                className="p-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 transition-all cursor-pointer"
+                title="Admin CMS Console"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Bottom Row: Copyright + Back to Top */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-1.5">
-            <span>© 2026 {PERSONAL_INFO.name}. All rights reserved.</span>
+            <span>© 2026 {profile.name}. All rights reserved.</span>
             <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">Lords Universal College, Mumbai</span>
+            <span className="hidden sm:inline">{profile.college}</span>
           </div>
 
           <div className="flex items-center gap-4">

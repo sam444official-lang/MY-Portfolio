@@ -8,13 +8,12 @@ import {
   Briefcase,
   GraduationCap,
   Code,
-  Award,
   Sparkles,
   Send,
   RefreshCw,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { PERSONAL_INFO, FEATURED_PROJECT, EDUCATION_DATA, SKILLS_DATA } from "../data/portfolioData";
+import { useCMS } from "../context/CMSContext";
 
 interface ResumeModalProps {
   isOpen: boolean;
@@ -22,6 +21,12 @@ interface ResumeModalProps {
 }
 
 export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => {
+  const { data } = useCMS();
+  const profile = data.profile;
+  const edu = data.education;
+  const featuredProject = data.featuredProject;
+  const skillsList = data.skills || [];
+
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"resume" | "ai">("resume");
   const [aiQuestion, setAiQuestion] = useState("");
@@ -40,39 +45,34 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
 
     const resumeFormattedText = `
 ===================================================================
-SARIM USMANI - RESUME
+${profile.name.toUpperCase()} - RESUME
 ===================================================================
-Email: ${PERSONAL_INFO.email}
-Location: ${PERSONAL_INFO.location}
-GitHub: ${PERSONAL_INFO.github}
-LinkedIn: ${PERSONAL_INFO.linkedin}
+Email: ${profile.email}
+Phone: ${profile.phone || "N/A"}
+Location: ${profile.location}
+GitHub: ${profile.github}
+LinkedIn: ${profile.linkedin}
 
-OBJECTIVE / SUMMARY
+SUMMARY
 -------------------------------------------------------------------
-Final-Year Computer Science undergraduate student at Lords Universal College, Mumbai (2022-2026), with core expertise in Full-Stack Web Development (Next.js 15, React 19, TypeScript, Node.js, Express, Firebase) and Generative AI integrations (Gemini API).
+${profile.bioFull || profile.bioShort}
 
 EDUCATION
 -------------------------------------------------------------------
-Degree: ${EDUCATION_DATA.degree}
-Institution: ${EDUCATION_DATA.institution}, ${EDUCATION_DATA.location}
-Period: ${EDUCATION_DATA.period}
-Status: ${EDUCATION_DATA.score}
+Degree: ${edu?.degree || "Bachelor of Science in Computer Science"}
+Institution: ${edu?.institution || profile.college}, ${edu?.location || profile.location}
+Period: ${edu?.period || profile.graduationYear}
+Score: ${edu?.score || "N/A"}
 
-TECHNICAL SKILLS
+SKILLS
 -------------------------------------------------------------------
-• Frontend: React 19, Next.js 15, TypeScript, Tailwind CSS, HTML5, CSS3
-• Backend: Node.js, Express.js, Firebase (Firestore & Auth), REST APIs
-• Programming Languages: C, C++, Java, Python, JavaScript, TypeScript
-• Databases: MySQL, Firestore
-• Developer Tools: Git, GitHub, VS Code, Postman, Figma
+${skillsList.map((s) => `• ${s.name} (${s.category}) - ${s.progress}%`).join("\n")}
 
 FEATURED CAPSTONE PROJECT
 -------------------------------------------------------------------
-Title: ${FEATURED_PROJECT.title} - ${FEATURED_PROJECT.subtitle}
-Description: ${FEATURED_PROJECT.description}
-Key Highlights:
-${FEATURED_PROJECT.features.map((f) => `  - ${f}`).join("\n")}
-Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
+Title: ${featuredProject?.title} - ${featuredProject?.subtitle}
+Description: ${featuredProject?.description}
+Technologies: ${(featuredProject?.technologies || []).join(", ")}
 
 ===================================================================
 `;
@@ -81,13 +81,13 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Sarim_Usmani_Resume.txt";
+    a.download = `${profile.name.replace(/\s+/g, "_")}_Resume.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleCopyText = () => {
-    const text = `${PERSONAL_INFO.name} - ${PERSONAL_INFO.title}\nEmail: ${PERSONAL_INFO.email}\nEducation: ${EDUCATION_DATA.degree}, ${EDUCATION_DATA.institution} (2022-2026)\nSkills: Next.js, React, TypeScript, Node.js, Firebase, Gemini AI.`;
+    const text = `${profile.name} - ${profile.title}\nEmail: ${profile.email}\nEducation: ${edu?.degree || profile.college} (${profile.graduationYear})\nSkills: ${skillsList.slice(0, 6).map((s) => s.name).join(", ")}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -105,14 +105,14 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `Regarding Sarim Usmani's Resume: ${questionToAsk}`,
+          message: `Regarding ${profile.name}'s Resume: ${questionToAsk}`,
         }),
       });
 
-      const data = await resp.json();
-      setAiAnswer(data.reply || "Sarim Usmani is proficient in Next.js, React, TypeScript, and AI integrations.");
-    } catch (err) {
-      setAiAnswer("Sarim Usmani is a Final-Year CS Student at Lords Universal College, Mumbai, skilled in React 19, Next.js, and Full-Stack Web Development.");
+      const resData = await resp.json();
+      setAiAnswer(resData.reply || `${profile.name} is proficient in web development, modern frontend frameworks, and AI integrations.`);
+    } catch {
+      setAiAnswer(`${profile.name} is a ${profile.title} at ${profile.college}, skilled in React, Next.js, and Full-Stack Web Development.`);
     } finally {
       setIsAsking(false);
     }
@@ -129,10 +129,10 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
             </div>
             <div>
               <h3 className="text-2xl font-bold text-white tracking-tight">
-                Sarim Usmani — Curriculum Vitae
+                {profile.name} — Curriculum Vitae
               </h3>
               <p className="text-xs text-zinc-400">
-                Final-Year Computer Science Student • Full-Stack Web Developer
+                {profile.title} • {profile.subtitle}
               </p>
             </div>
           </div>
@@ -165,9 +165,9 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
             {/* Header info card */}
             <div className="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <div className="text-lg font-bold text-white">{PERSONAL_INFO.name}</div>
-                <div className="text-xs text-emerald-400 font-mono">{PERSONAL_INFO.title} • {PERSONAL_INFO.college}</div>
-                <div className="text-xs text-zinc-400">{PERSONAL_INFO.email} • {PERSONAL_INFO.location}</div>
+                <div className="text-lg font-bold text-white">{profile.name}</div>
+                <div className="text-xs text-emerald-400 font-mono">{profile.title} • {profile.college}</div>
+                <div className="text-xs text-zinc-400">{profile.email} • {profile.location}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -190,20 +190,22 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
             </div>
 
             {/* Education Section */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" />
-                <span>Education</span>
-              </h4>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2 text-xs">
-                <div className="flex justify-between text-white font-bold">
-                  <span>{EDUCATION_DATA.degree}</span>
-                  <span className="text-emerald-400 font-mono">{EDUCATION_DATA.period}</span>
+            {edu && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Education</span>
+                </h4>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2 text-xs">
+                  <div className="flex justify-between text-white font-bold">
+                    <span>{edu.degree}</span>
+                    <span className="text-emerald-400 font-mono">{edu.period}</span>
+                  </div>
+                  <div className="text-zinc-400">{edu.institution}, {edu.location}</div>
+                  <div className="text-zinc-300 font-medium pt-1">Status: {edu.score || "Enrolled"}</div>
                 </div>
-                <div className="text-zinc-400">{EDUCATION_DATA.institution}, {EDUCATION_DATA.location}</div>
-                <div className="text-zinc-300 font-medium pt-1">Expected Graduation: May 2026</div>
               </div>
-            </div>
+            )}
 
             {/* Technical Skills Section */}
             <div className="space-y-2">
@@ -212,45 +214,40 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
                 <span>Core Technical Skills</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                  <span className="text-white font-bold">Frontend Development</span>
-                  <p className="text-zinc-400">React 19, Next.js 15, TypeScript, Tailwind CSS, HTML5, CSS3, Framer Motion</p>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                  <span className="text-white font-bold">Backend & AI</span>
-                  <p className="text-zinc-400">Node.js, Express.js, Firebase (Firestore, Auth), REST APIs, Gemini AI SDK</p>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                  <span className="text-white font-bold">Programming Languages</span>
-                  <p className="text-zinc-400">C, C++, Java, Python, JavaScript, TypeScript</p>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                  <span className="text-white font-bold">Developer Tools & Databases</span>
-                  <p className="text-zinc-400">Git, GitHub, VS Code, Postman, Figma, MySQL, Firestore</p>
-                </div>
+                {skillsList.map((skill, index) => (
+                  <div key={skill.id || index} className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-white font-bold">{skill.name}</span>
+                      <span className="text-emerald-400 font-mono text-[11px]">{skill.progress}%</span>
+                    </div>
+                    <p className="text-zinc-400 text-[11px]">{skill.category} • {(skill.relevantTech || []).join(", ")}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Featured Projects Section */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
-                <Briefcase className="w-4 h-4" />
-                <span>Featured Capstone Work</span>
-              </h4>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3 text-xs">
-                <div className="flex justify-between text-white font-bold">
-                  <span>{FEATURED_PROJECT.title} — {FEATURED_PROJECT.subtitle}</span>
-                </div>
-                <p className="text-zinc-300">{FEATURED_PROJECT.description}</p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {FEATURED_PROJECT.technologies.map((t) => (
-                    <span key={t} className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono text-zinc-200">
-                      {t}
-                    </span>
-                  ))}
+            {featuredProject && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                  <Briefcase className="w-4 h-4" />
+                  <span>Featured Capstone Work</span>
+                </h4>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3 text-xs">
+                  <div className="flex justify-between text-white font-bold">
+                    <span>{featuredProject.title} — {featuredProject.subtitle}</span>
+                  </div>
+                  <p className="text-zinc-300">{featuredProject.description}</p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {(featuredProject.technologies || []).map((t) => (
+                      <span key={t} className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono text-zinc-200">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -263,7 +260,7 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
                 <span>AI Resume Recruiter Query Assistant</span>
               </div>
               <p className="text-zinc-300">
-                Ask any specific recruiter or technical evaluation questions regarding Sarim Usmani's experience, skills, projects, or availability.
+                Ask any specific recruiter or technical evaluation questions regarding {profile.name}'s experience, skills, projects, or availability.
               </p>
             </div>
 
@@ -272,10 +269,10 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
               <span className="text-xs text-zinc-400 font-mono">Suggested Questions:</span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  "Is Sarim available for immediate full-stack internships?",
-                  "What is Sarim's experience with Next.js & React 19?",
-                  "Tell me about Sarim's capstone project EcoTrack India.",
-                  "Does Sarim have experience with Firebase & Express?",
+                  `Is ${profile.name} available for immediate internships?`,
+                  `What are ${profile.name}'s key technical skills?`,
+                  `Tell me about ${profile.name}'s capstone project.`,
+                  `What degree is ${profile.name} pursuing?`,
                 ].map((preset) => (
                   <button
                     key={preset}
@@ -295,7 +292,7 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Ask anything about Sarim's resume..."
+                placeholder={`Ask anything about ${profile.name}'s resume...`}
                 value={aiQuestion}
                 onChange={(e) => setAiQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAskAiAboutResume()}
@@ -316,7 +313,7 @@ Technologies: ${FEATURED_PROJECT.technologies.join(", ")}
               <div className="p-5 rounded-2xl bg-white/5 border border-white/10 text-xs text-zinc-200 leading-relaxed space-y-2">
                 <div className="flex items-center gap-1.5 text-emerald-400 font-bold font-mono">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Sarim's Assistant Response:</span>
+                  <span>Assistant Response:</span>
                 </div>
                 <p className="whitespace-pre-wrap">{aiAnswer}</p>
               </div>
