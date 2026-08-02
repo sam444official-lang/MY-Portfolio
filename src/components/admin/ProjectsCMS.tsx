@@ -7,6 +7,8 @@ export const ProjectsCMS: React.FC = () => {
   const { data, updateData, saveNow, uploadAsset } = useCMS();
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [isSavingModal, setIsSavingModal] = useState(false);
+  const [modalSavedSuccess, setModalSavedSuccess] = useState(false);
 
   const allProjects: Project[] = [
     ...(data.featuredProject ? [data.featuredProject] : []),
@@ -89,28 +91,39 @@ export const ProjectsCMS: React.FC = () => {
 
   const handleSaveModal = async () => {
     if (!editingProject) return;
+    setIsSavingModal(true);
+
+    let updatedStore: any = null;
 
     updateData((prev) => {
+      let nextState: any;
       if (editingProject.isFeatured) {
-        return {
+        nextState = {
           ...prev,
           featuredProject: editingProject,
         };
       } else {
-        return {
+        const isExisting = prev.additionalProjects.some((p) => p.id === editingProject.id);
+        nextState = {
           ...prev,
-          additionalProjects: prev.additionalProjects.map((p) =>
-            p.id === editingProject.id ? editingProject : p
-          ),
+          additionalProjects: isExisting
+            ? prev.additionalProjects.map((p) => (p.id === editingProject.id ? editingProject : p))
+            : [editingProject, ...prev.additionalProjects],
         };
       }
-    }, `Saved edits for ${editingProject.title}`);
+      updatedStore = nextState;
+      return nextState;
+    }, `Saved edits for project "${editingProject.title}"`);
 
-    const ok = await saveNow();
+    const ok = await saveNow(updatedStore || undefined);
+    setIsSavingModal(false);
+
     if (ok) {
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2000);
-      setEditingProject(null);
+      setModalSavedSuccess(true);
+      setTimeout(() => {
+        setModalSavedSuccess(false);
+        setEditingProject(null);
+      }, 800);
     }
   };
 
@@ -248,16 +261,31 @@ export const ProjectsCMS: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setEditingProject(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveModal}
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center space-x-1.5"
+                  disabled={isSavingModal}
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>Save Project</span>
+                  {modalSavedSuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-slate-950" />
+                      <span>Project Saved!</span>
+                    </>
+                  ) : isSavingModal ? (
+                    <>
+                      <Save className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Project</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -305,6 +333,25 @@ export const ProjectsCMS: React.FC = () => {
                     <option value="published">Published</option>
                     <option value="draft">Draft (Hidden)</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Image & Asset Upload */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <label className="block text-xs font-semibold text-slate-300">Project Thumbnail Image URL or Upload</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="https://images.unsplash.com/... or upload asset"
+                    value={editingProject.thumbnailUrl || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, thumbnailUrl: e.target.value })}
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <label className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center space-x-1.5 cursor-pointer shrink-0">
+                    <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Upload Image</span>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  </label>
                 </div>
               </div>
 
@@ -410,7 +457,7 @@ export const ProjectsCMS: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Challenges Solved</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Challenges Solved (One per line)</label>
                   <textarea
                     rows={3}
                     value={(editingProject.challengesSolved || []).join("\n")}
@@ -423,6 +470,21 @@ export const ProjectsCMS: React.FC = () => {
                     className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Future Improvements / Roadmap (One per line)</label>
+                <textarea
+                  rows={2}
+                  value={(editingProject.futureImprovements || []).join("\n")}
+                  onChange={(e) =>
+                    setEditingProject({
+                      ...editingProject,
+                      futureImprovements: e.target.value.split("\n").filter(Boolean),
+                    })
+                  }
+                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                />
               </div>
             </div>
           </div>

@@ -19,7 +19,7 @@ interface CMSContextType {
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateData: (updater: (prev: CmsData) => CmsData, changeSummary?: string) => void;
-  saveNow: () => Promise<boolean>;
+  saveNow: (explicitData?: CmsData) => Promise<boolean>;
   publishNow: () => Promise<boolean>;
   resetToDefault: () => Promise<boolean>;
   exportJson: () => void;
@@ -33,6 +33,7 @@ const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<CmsData>(INITIAL_CMS_DATA);
+  const dataRef = useRef<CmsData>(INITIAL_CMS_DATA);
   const [loading, setLoading] = useState<boolean>(true);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "error">("saved");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
@@ -46,6 +47,11 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync ref whenever state changes
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
   // Load CMS Data on mount
   const fetchCmsData = useCallback(async () => {
     try {
@@ -55,6 +61,7 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const json = await res.json();
         if (json && json.profile) {
           setData(json);
+          dataRef.current = json;
         }
       }
     } catch (e) {
@@ -78,19 +85,21 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // Save changes to backend
-  const saveNow = async (): Promise<boolean> => {
+  const saveNow = async (explicitData?: CmsData): Promise<boolean> => {
     try {
       setSaveStatus("saving");
+      const payload = explicitData || dataRef.current;
       const res = await fetch("/api/cms/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         const resJson = await res.json();
         if (resJson.store) {
           setData(resJson.store);
+          dataRef.current = resJson.store;
         }
         setSaveStatus("saved");
         setHasUnsavedChanges(false);
@@ -111,6 +120,7 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (updater: (prev: CmsData) => CmsData, changeSummary?: string) => {
       setData((prev) => {
         const next = updater(prev);
+        dataRef.current = next;
         setHasUnsavedChanges(true);
         setSaveStatus("unsaved");
 
